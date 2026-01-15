@@ -59,10 +59,19 @@ router.post('/seed', async (req, res) => {
   }
 });
 
-// Get all topics with problems plus user progress
+// Get all topics with problems plus user progress (with pagination)
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const topics = await Topic.find().lean();
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(20, parseInt(req.query.limit) || 10);
+    const skip = (page - 1) * limit;
+
+    const topics = await Topic.find()
+      .skip(skip)
+      .limit(limit)
+      .lean();
+    
+    const total = await Topic.countDocuments();
     const user = req.user;
 
     const progressMap = {};
@@ -78,7 +87,15 @@ router.get('/', authMiddleware, async (req, res) => {
       })),
     }));
 
-    res.json(data);
+    res.json({
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

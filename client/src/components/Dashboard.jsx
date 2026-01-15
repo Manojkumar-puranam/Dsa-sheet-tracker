@@ -13,8 +13,10 @@ const Dashboard = ({ token, user, activeTab }) => {
       setLoading(true);
       setError('');
       try {
-        const data = await fetchTopics(token);
-        setTopics(data);
+        const response = await fetchTopics(token);
+        // Handle both old format (array) and new format (object with data)
+        const topicsData = Array.isArray(response) ? response : response.data;
+        setTopics(topicsData);
       } catch (err) {
         setError(err.message || 'Failed to load topics');
       } finally {
